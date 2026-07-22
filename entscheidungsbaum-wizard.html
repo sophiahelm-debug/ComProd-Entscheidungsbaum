@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entscheidungsbaum · ComProd 2026 · Sales</title>
+<style>
+:root {
+  --gold: #E6AF14;
+  --gold-bg: #FFFBEE;
+  --gold-deep: #6B4F09;
+  --cosmo: #C84182;
+  --cosmo-bg: #FCF3F7;
+  --cosmo-deep: #6E1F46;
+  --ocean: #3C698E;
+  --ocean-bg: #F3F7FB;
+  --ocean-deep: #1B354A;
+  --green: #3E6E3E;
+  --green-bg: #F0F7F0;
+  --red: #B44A4A;
+  --red-bg: #FCF3F3;
+  --charcoal: #2C2C2A;
+  --paper: #FFFFFF;
+  --paper-warm: #FDFDFB;
+  --ink: #1A1A1A;
+  --ink-soft: #4A4A4A;
+  --ink-muted: #888880;
+  --rule: #ECEAE3;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: var(--paper-warm);
+  color: var(--ink);
+  line-height: 1.5;
+  padding: 32px 20px;
+  min-height: 100vh;
+}
+
+.container { max-width: 720px; margin: 0 auto; }
+
+.header {
+  border-bottom: 2px solid var(--rule);
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+}
+.eyebrow {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--cosmo);
+  margin-bottom: 8px;
+}
+h1 {
+  font-size: 30px; font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+}
+
+.progress {
+  display: flex; gap: 6px;
+  margin-bottom: 20px;
+}
+.progress-dot {
+  height: 5px; flex: 1;
+  background: var(--rule);
+  border-radius: 3px;
+  transition: background 0.25s;
+}
+.progress-dot.active { background: var(--gold); }
+.progress-dot.done { background: var(--gold-deep); }
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 28px 30px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03), 0 8px 24px rgba(0,0,0,0.04);
+  margin-bottom: 20px;
+}
+
+.step-label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 10px;
+}
+.question {
+  font-size: 21px; font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+.hint {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-bottom: 22px;
+  line-height: 1.4;
+}
+
+.answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.btn {
+  background: var(--paper);
+  border: 2px solid var(--rule);
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-size: 15px; font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--ink);
+  font-family: inherit;
+  text-align: center;
+}
+.btn:hover { border-color: var(--gold); background: var(--gold-bg); }
+.btn.btn-yes { border-color: #C7E0C7; }
+.btn.btn-yes:hover { background: var(--green-bg); border-color: var(--green); }
+.btn.btn-no { border-color: #E5C7C7; }
+.btn.btn-no:hover { background: var(--red-bg); border-color: var(--red); }
+.btn.btn-option { border-color: var(--rule); text-align: left; padding: 18px 22px; }
+.btn.btn-option:hover { border-color: var(--cosmo); background: var(--cosmo-bg); }
+.answers-stacked { grid-template-columns: 1fr; }
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+}
+.link-btn {
+  background: none; border: none;
+  font-size: 13px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  padding: 6px 2px;
+  font-family: inherit;
+}
+.link-btn:hover { color: var(--ink); }
+
+.trail {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.trail-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+.trail-item {
+  display: inline-block;
+  background: var(--gold-bg);
+  color: var(--gold-deep);
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin: 2px 3px 2px 0;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.result-card {
+  background: var(--paper);
+  border-radius: 14px;
+  padding: 30px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03), 0 8px 24px rgba(0,0,0,0.04);
+  border-top: 6px solid var(--gold);
+  margin-bottom: 20px;
+}
+.result-card.fullflex { border-top-color: var(--cosmo); }
+.result-card.hire { border-top-color: var(--gold); }
+.result-card.old { border-top-color: var(--green); }
+.result-card.approval { border-top-color: var(--ocean); }
+
+.result-label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--cosmo);
+  margin-bottom: 10px;
+}
+.result-card.fullflex .result-label { color: var(--cosmo); }
+.result-card.hire .result-label { color: var(--gold-deep); }
+.result-card.old .result-label { color: var(--green); }
+.result-card.approval .result-label { color: var(--ocean); }
+
+.result-title {
+  font-size: 30px; font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+  line-height: 1.15;
+}
+.result-summary {
+  font-size: 16px;
+  color: var(--ink);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.result-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+.result-section h3 {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+.result-section ol, .result-section ul {
+  padding-left: 20px;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.result-section li { margin-bottom: 4px; }
+
+.snippet {
+  background: var(--charcoal);
+  color: var(--paper);
+  padding: 18px 22px;
+  border-radius: 10px;
+  border-left: 4px solid var(--gold);
+  font-size: 15px;
+  line-height: 1.5;
+  font-style: italic;
+}
+.snippet strong {
+  color: var(--gold);
+  font-style: normal;
+  font-weight: 700;
+}
+
+.restart-btn {
+  display: inline-block;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.restart-btn:hover { background: var(--charcoal); }
+
+.start-screen {
+  text-align: center;
+  padding: 40px 30px;
+}
+.start-screen h2 {
+  font-size: 26px; font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+.start-screen p {
+  color: var(--ink-soft);
+  margin-bottom: 26px;
+  font-size: 15px;
+}
+.start-btn {
+  background: var(--gold);
+  color: var(--ink);
+  padding: 14px 36px;
+  border-radius: 10px;
+  border: none;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.start-btn:hover {
+  background: var(--gold-deep);
+  color: var(--paper);
+}
+
+.footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 32px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 600px) {
+  body { padding: 20px 12px; }
+  h1 { font-size: 22px; }
+  .card, .result-card { padding: 22px 20px; }
+  .question { font-size: 18px; }
+  .result-title { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="eyebrow">ComProd 2026 · Sales-Wizard</div>
+    <h1>Entscheidungsbaum &amp; Preisfindung</h1>
+    <p class="subtitle">Ein paar Fragen — dann bekommst du die Empfehlung für deinen Kunden.</p>
+  </div>
+
+  <div class="progress" id="progress"></div>
+  <div id="content"></div>
+
+  <div class="footer">
+    HeyJobs · Sales Enablement · Entscheidungsbaum v1.0 · Stand: 07/2026
+  </div>
+
+</div>
+
+<script>
+const state = {
+  answers: [],
+  currentQuestion: 'q1'
+};
+
+const questions = {
+  q1: {
+    step: 1,
+    label: 'Kundengröße-Check',
+    text: 'Qualifiziert sich der Kunde für FULL FLEX?',
+    hint: 'Ist ein Jahres-Budget von mindestens 6.000 € realistisch?',
+    yes: 'q2_fullflex_status',
+    no: 'q2_hire_neukunde'
+  },
+  q2_fullflex_status: {
+    step: 2,
+    label: 'Kommunikations-Ansatz',
+    text: 'Wie ordnest du den Kunden ein?',
+    hint: 'Bestimmt, wie du kommunikativ auf den Kunden zugehst.',
+    options: [
+      { key: 'outreach', label: 'Neukunde oder auf Migrationsliste', next: 'q3_fullflex_price', context: 'aktiver Outreach' },
+      { key: 'reactive', label: 'Bestandskunde (nicht auf Migrationsliste)', next: 'q3_fullflex_price', context: 'reaktive Komms' }
+    ]
+  },
+  q3_fullflex_price: {
+    step: 3,
+    label: 'Preis-Guardrail · FULL FLEX',
+    text: 'Liegt der berechnete Preis über der Minimum Budget Table?',
+    hint: 'Bedarfsanalyse basierend auf der Karriereseite als Grundlage.',
+    yes: 'q4_fullflex_neukunde',
+    no: 'result_tl_approval_price'
+  },
+  q4_fullflex_neukunde: {
+    step: 4,
+    label: 'Kundenstatus',
+    text: 'Ist der Kunde ein Neukunde?',
+    yes: 'result_fullflex_offer',
+    no: 'q5_fullflex_umsatz'
+  },
+  q5_fullflex_umsatz: {
+    step: 5,
+    label: 'Umsatz-Guardrail',
+    text: 'Beträgt der geplante Umsatz mehr als 100% des Vorjahresumsatzes?',
+    yes: 'result_fullflex_offer',
+    no: 'result_tl_approval_umsatz'
+  },
+  q2_hire_neukunde: {
+    step: 2,
+    label: 'Kundenstatus',
+    text: 'Ist der Kunde ein Neukunde?',
+    yes: 'result_hire_neukunde',
+    no: 'q3_hire_bestand'
+  },
+  q3_hire_bestand: {
+    step: 3,
+    label: 'Umsatz-Guardrail · HIRE Bestand',
+    text: 'Ist gleicher durchschnittlicher Umsatz pro Job oder in Gesamtsumme im Vergleich zum Vorjahr möglich?',
+    hint: 'Bedarfsanalyse der Einzeljobs als Grundlage.',
+    yes: 'result_hire_pricing',
+    no: 'q4_hire_zufrieden'
+  },
+  q4_hire_zufrieden: {
+    step: 4,
+    label: 'Kunden-Zufriedenheit',
+    text: 'Ist der Kunde zufrieden mit seiner aktuellen Preis-Leistung?',
+    yes: 'result_altes_pricing',
+    no: 'result_tl_approval_umsatz'
+  }
+};
+
+const results = {
+  result_fullflex_offer: {
+    theme: 'fullflex',
+    label: 'Empfehlung',
+    title: 'FULL FLEX Offer',
+    summary: 'Für diesen Kunden ist FULL FLEX die richtige Wahl — inklusive BASIC Listing, HIRE-Budget im Wallet und optional REACH.',
+    snippet: '„Basierend auf Ihrem Volumen und Setup empfehle ich Ihnen unser <strong>FULL FLEX Bundle</strong> — Sie bekommen BASIC Listing für alle Ihre Jobs, ein flexibles Budget für HIRE-Kampagnen und die Möglichkeit, REACH-Kampagnen zu integrieren. So haben Sie maximale Steuerungsfreiheit über das Jahr."',
+    steps: [
+      'Angebot mit dem Budget Planner konfigurieren',
+      'SF-Opportunity mit Produkt <strong>„BASIC Listing"</strong> anlegen',
+      'Bei Closed Won: Account wird automatisch als <em>„New Commercial Offering"</em> markiert',
+      'CusOps aktiviert im RP-Backend — Kunde sieht neue Product Selection Page bei der nächsten Job-Anlage'
+    ]
+  },
+  result_hire_neukunde: {
+    theme: 'hire',
+    label: 'Empfehlung',
+    title: 'HIRE Neukunden-Angebot',
+    summary: 'Für diesen Neukunden ist HIRE 2.0 das passende Einstiegsprodukt.',
+    snippet: '„Für Ihren aktuellen Bedarf empfehle ich Ihnen unser <strong>HIRE 2.0 Pricing</strong> — ab 400 € pro Monat bei 3 Monaten Laufzeit, mit voller Flexibilität in Laufzeit- und Boost-Kombination. Damit können Sie einzelne Vakanzen gezielt pushen, ohne sich langfristig binden zu müssen."',
+    steps: [
+      'Bedarfsanalyse der Einzeljobs — welche Vakanzen sind schwer besetzbar?',
+      'SF-Opportunity mit Produkt <strong>„HIRE Budget - Neue Preise"</strong> anlegen',
+      'Boost-Budget je nach Job-Schwierigkeit dazustellen (siehe Budget Planner)',
+      'Preisrahmen: 400 €/Monat + optionaler Boost (200 € pro Einheit, gestuftert)'
+    ]
+  },
+  result_hire_pricing: {
+    theme: 'hire',
+    label: 'Empfehlung',
+    title: 'HIRE 2.0 Pricing',
+    summary: 'Für diesen Bestandskunden geht HIRE 2.0 mit dem Umsatz-Guardrail durch — kein TL Approval nötig.',
+    snippet: '„Basierend auf Ihrer bisherigen Kooperation und Ihrem aktuellen Bedarf empfehle ich Ihnen unser <strong>HIRE 2.0 Pricing</strong> — ab 400 € pro Monat, mit voller Flexibilität in Laufzeit- und Boost-Kombinationen. So bleiben wir bei einem stabilen Umsatz pro Job im Vergleich zum Vorjahr."',
+    steps: [
+      'Angebot mit HIRE 2.0 Pricing vorbereiten',
+      'SF-Opportunity mit Produkt <strong>„HIRE Budget - Neue Preise"</strong> anlegen',
+      'Ggf. Boost-Optionen je nach Vakanz-Schwierigkeit ergänzen',
+      'Preisrahmen: min. 400 €/Monat bei 3 Monaten Laufzeit'
+    ]
+  },
+  result_altes_pricing: {
+    theme: 'old',
+    label: 'Empfehlung',
+    title: 'Altes Pricing beibehalten',
+    summary: 'Der Kunde ist zufrieden mit seinem aktuellen Setup — keine Migration nötig.',
+    snippet: '„Wir bleiben bei Ihrem aktuellen Setup und Ihrer bewährten Preisstruktur. Sollten sich Ihre Anforderungen ändern, sprechen wir gerne über die neuen Optionen — bis dahin läuft alles wie gewohnt."',
+    steps: [
+      'Bestehendes Setup unverändert fortführen',
+      'Nicht proaktiv auf neues Pricing ansprechen',
+      'Kunde sensibel für Signale beobachten, dass sich der Bedarf ändert',
+      'Bei nächstem Renewal-Anlass ggf. neu evaluieren'
+    ]
+  },
+  result_tl_approval_price: {
+    theme: 'approval',
+    label: 'Nächster Schritt',
+    title: 'TeamLead Approval nötig',
+    summary: 'Der Preis liegt unter der Minimum Budget Table — TL muss die Ausnahme prüfen und bestätigen.',
+    snippet: 'An den Kunden noch keine Zusage: „Ich schaue mir das intern noch einmal an und komme in Kürze mit einem finalen Vorschlag auf Sie zu."',
+    steps: [
+      'Fall an TL herantragen mit Begründung: Kundenbedarf, Marktsituation, strategische Überlegungen',
+      'TL prüft: Rückgang des Hiring-Bedarfs im Vergleich zum Vorjahr?',
+      'Bei TL-OK: entsprechendes FULL FLEX Offer platzieren',
+      'Bei TL-Nein: alternative Produktoption (evtl. HIRE 2.0) mit Kunden besprechen'
+    ]
+  },
+  result_tl_approval_umsatz: {
+    theme: 'approval',
+    label: 'Nächster Schritt',
+    title: 'TeamLead Approval nötig',
+    summary: 'Umsatz-Guardrail nicht erfüllt — TL muss den Fall prüfen und ggf. genehmigen.',
+    snippet: 'An den Kunden noch keine Zusage: „Ich schaue mir das intern noch einmal an und komme in Kürze mit einem finalen Vorschlag auf Sie zu."',
+    steps: [
+      'Fall an TL herantragen: Ist gleicher durchschnittlicher Umsatz pro Job im Vergleich zum Vorjahr möglich?',
+      'TL bestätigt Rückgang des Hiring-Bedarfs im Vergleich zum Vorjahr',
+      'Bei TL-OK: entsprechendes Angebot platzieren (FULL FLEX Offer / HIRE 2.0 Pricing)',
+      'Bei TL-Nein: mit Kunden alternative Optionen besprechen'
+    ]
+  }
+};
+
+const contentEl = document.getElementById('content');
+const progressEl = document.getElementById('progress');
+const MAX_STEPS = 5;
+
+function renderStart() {
+  state.answers = [];
+  state.currentQuestion = 'q1';
+  progressEl.innerHTML = '';
+  contentEl.innerHTML = `
+    <div class="card start-screen">
+      <h2>Bereit für die Preisfindung?</h2>
+      <p>Beantworte ein paar Fragen zum Kunden — der Wizard führt dich zur passenden Empfehlung, inklusive Sprech-Snippet und nächsten Schritten.</p>
+      <button class="start-btn" onclick="renderQuestion('q1')">Los geht's</button>
+    </div>
+  `;
+}
+
+function renderProgress(currentStep) {
+  progressEl.innerHTML = '';
+  for (let i = 1; i <= MAX_STEPS; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot';
+    if (i < currentStep) dot.classList.add('done');
+    else if (i === currentStep) dot.classList.add('active');
+    progressEl.appendChild(dot);
+  }
+}
+
+function renderTrail() {
+  if (state.answers.length === 0) return '';
+  const chips = state.answers.map(a => `<span class="trail-item">${a.summary}</span>`).join('');
+  return `
+    <div class="trail">
+      <div class="trail-label">Bisheriger Pfad</div>
+      <div>${chips}</div>
+    </div>
+  `;
+}
+
+function renderQuestion(qId) {
+  const q = questions[qId];
+  state.currentQuestion = qId;
+  renderProgress(q.step);
+
+  let answersHtml;
+  if (q.options) {
+    // Custom multi-option question
+    const opts = q.options.map(o =>
+      `<button class="btn btn-option" onclick="answer('${qId}', '${o.key}')">${o.label}</button>`
+    ).join('');
+    answersHtml = `<div class="answers answers-stacked">${opts}</div>`;
+  } else {
+    // Standard yes/no
+    answersHtml = `
+      <div class="answers">
+        <button class="btn btn-yes" onclick="answer('${qId}', 'yes')">Ja</button>
+        <button class="btn btn-no" onclick="answer('${qId}', 'no')">Nein</button>
+      </div>
+    `;
+  }
+
+  contentEl.innerHTML = `
+    ${renderTrail()}
+    <div class="card">
+      <div class="step-label">Schritt ${q.step} · ${q.label}</div>
+      <div class="question">${q.text}</div>
+      ${q.hint ? `<div class="hint">${q.hint}</div>` : ''}
+      ${answersHtml}
+      <div class="nav">
+        <button class="link-btn" onclick="goBack()" ${state.answers.length === 0 ? 'style="visibility:hidden"' : ''}>← Schritt zurück</button>
+        <button class="link-btn" onclick="renderStart()">↻ Neu starten</button>
+      </div>
+    </div>
+  `;
+}
+
+function answer(qId, choice) {
+  const q = questions[qId];
+  let next, context, choiceLabel;
+
+  if (q.options) {
+    // Multi-option question
+    const opt = q.options.find(o => o.key === choice);
+    next = opt.next;
+    context = opt.context;
+    choiceLabel = opt.label;
+  } else {
+    // Yes/No question
+    const path = q[choice];
+    next = typeof path === 'string' ? path : path.next;
+    context = typeof path === 'string' ? null : path.context;
+    choiceLabel = choice === 'yes' ? '✓ Ja' : '✗ Nein';
+  }
+
+  const summary = `${q.label}: ${choiceLabel}${context ? ' · ' + context : ''}`;
+
+  state.answers.push({ questionId: qId, choice, summary });
+
+  if (next.startsWith('result_')) {
+    renderResult(next);
+  } else {
+    renderQuestion(next);
+  }
+}
+
+function goBack() {
+  if (state.answers.length === 0) return;
+  state.answers.pop();
+  if (state.answers.length === 0) {
+    renderQuestion('q1');
+  } else {
+    replayAndRenderCurrent();
+  }
+}
+
+function replayAndRenderCurrent() {
+  const saved = [...state.answers];
+  state.answers = [];
+  let currentQ = 'q1';
+  for (const a of saved) {
+    const q = questions[currentQ];
+    let next;
+    if (q.options) {
+      next = q.options.find(o => o.key === a.choice).next;
+    } else {
+      const path = q[a.choice];
+      next = typeof path === 'string' ? path : path.next;
+    }
+    state.answers.push(a);
+    currentQ = next;
+  }
+  if (currentQ.startsWith('result_')) {
+    renderResult(currentQ);
+  } else {
+    renderQuestion(currentQ);
+  }
+}
+
+function renderResult(resultId) {
+  const r = results[resultId];
+  progressEl.innerHTML = '';
+  for (let i = 0; i < MAX_STEPS; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'progress-dot done';
+    progressEl.appendChild(dot);
+  }
+  const stepsHtml = r.steps.map(s => `<li>${s}</li>`).join('');
+  contentEl.innerHTML = `
+    ${renderTrail()}
+    <div class="result-card ${r.theme}">
+      <div class="result-label">${r.label}</div>
+      <div class="result-title">${r.title}</div>
+      <div class="result-summary">${r.summary}</div>
+
+      <div class="result-section">
+        <h3>Sprech-Snippet für den Kunden</h3>
+        <div class="snippet">${r.snippet}</div>
+      </div>
+
+      <div class="result-section">
+        <h3>Nächste Schritte</h3>
+        <ol>${stepsHtml}</ol>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 28px;">
+      <button class="restart-btn" onclick="renderStart()">↻ Neuen Kunden checken</button>
+    </div>
+  `;
+
+  // Auto-resize iframe to fit content (postMessage to parent)
+  requestAnimationFrame(() => {
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'resize', height: document.body.scrollHeight }, '*');
+    }
+  });
+}
+
+// Auto-resize on any content change
+const observer = new MutationObserver(() => {
+  if (window.parent !== window) {
+    window.parent.postMessage({ type: 'resize', height: document.body.scrollHeight }, '*');
+  }
+});
+observer.observe(document.body, { childList: true, subtree: true });
+
+renderStart();
+</script>
+</body>
+</html>
